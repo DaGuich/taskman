@@ -22,5 +22,11 @@ setuptools.setup(
     ],
     install_requires=[
         'appdirs==1.4.3'
-    ]
+    ],
+    entry_points={
+        'console_scripts': [
+            'taskman=taskman.__main__:main',
+            'tn=taskman.__main__:main',
+        ]
+    }
 )
