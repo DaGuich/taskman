@@ -1,16 +1,17 @@
 import logging
 import configparser
 import argparse
-import os.path
+import os
 
 from appdirs import user_config_dir, user_data_dir, site_config_dir, site_data_dir
 
 import taskman
 
 CONFIG_FILE_NAME = 'taskman.cfg'
+DATA_FILE_NAME = 'taskman.db'
 USER_CONFIG_PATH = os.path.join(user_config_dir(taskman.__appname__), CONFIG_FILE_NAME)
 SITE_CONFIG_PATH = os.path.join(site_config_dir(taskman.__appname__), CONFIG_FILE_NAME)
-USER_DATA_PATH = os.path.join(user_data_dir(taskman.__appname__), CONFIG_FILE_NAME)
+USER_DATA_PATH = os.path.join(user_data_dir(taskman.__appname__), DATA_FILE_NAME)
 
 
 def cmd(subcmd):
@@ -41,12 +42,34 @@ def cmd_init(args):
     config = args.config
     if not args.config:
         config = USER_CONFIG_PATH
+    config = os.path.abspath(config)
     lgr.info('Path config file: {}'.format(config))
 
     data = args.data
     if not args.data:
         data = USER_DATA_PATH
+    data = os.path.abspath(data)
     lgr.info('Path data file: {}'.format(data))
+
+    cparser = configparser.ConfigParser()
+    cparser.add_section('general')
+    cparser.set('general', 'data', data)
+    cparser.add_section('project_default')
+    cparser.set('project_default', 'name', 'Default')
+
+    if os.path.isfile(config):
+        print('Configuration file already exists')
+        answer = input('Overwrite? (y/N) ')
+        if answer or answer == 'y':
+            pass
+        else:
+            print('Canceled!')
+            return
+
+    os.makedirs(os.path.dirname(config), exist_ok=True)
+
+    with open(config, 'w') as f:
+        cparser.write(f)
 
 
 def main():
@@ -55,6 +78,7 @@ def main():
     logging.getLogger('base')
     config = configparser.ConfigParser()
     config.read([CONFIG_FILE_NAME, USER_CONFIG_PATH, SITE_CONFIG_PATH])
+    print(vars(config))
 
     argp = argparse.ArgumentParser(description='Manage your tasks')
     argp.add_argument('-c', '--config', help='Path to config file', default=CONFIG_FILE_NAME)
